@@ -17,58 +17,62 @@ class Miner:
         self.MaxScrollNumber = MaxScrollNumber
 
     def loadPictureAndGenPosList(self):
+        self.loadImageSuccess = True
         # gen Jump
-        self.JumpTagImg = cv2.imread("Tags\\JumpTag.PNG")
-        self.ConfirmTagImg = cv2.imread("Tags\\ConfirmTag.PNG")
-        self.LeaveStationImg = cv2.imread("Tags\\LeaveStation.PNG")
+        self.JumpTagImg = self.loadImage("Tags\\JumpTag.PNG")
+        self.ConfirmTagImg = self.loadImage("Tags\\ConfirmTag.PNG")
+        self.LeaveStationImg = self.loadImage("Tags\\LeaveStation.PNG")
         self.JumpPoses = []
         for i in range(2):
             self.JumpPoses.append([350, 437 + 120 * i])
         # gen packBag
         ## move to MaterialsHangar
-        self.BagImg = cv2.imread("Tags\\Bag.PNG")
-        self.OreBinImg = cv2.imread("Tags\\oreBin.PNG")
-        self.AllSelectImg = cv2.imread("Tags\\AllSelect.PNG")
-        self.MaterialsHangarImg = cv2.imread("Tags\\MaterialsHangar.PNG")
-        self.MoveToImg = cv2.imread("Tags\\MoveTo.PNG")
+        self.BagImg = self.loadImage("Tags\\Bag.PNG")
+        self.OreBinImg = self.loadImage("Tags\\oreBin.PNG")
+        self.AllSelectImg = self.loadImage("Tags\\AllSelect.PNG")
+        self.MaterialsHangarImg = self.loadImage("Tags\\MaterialsHangar.PNG")
+        self.MoveToImg = self.loadImage("Tags\\MoveTo.PNG")
         ## Stack All
-        self.StackAllImg = cv2.imread("Tags\\StackAll.PNG")
-        self.EndOperationImg = cv2.imread("Tags\\EndOperation.PNG")
+        self.StackAllImg = self.loadImage("Tags\\StackAll.PNG")
+        self.EndOperationImg = self.loadImage("Tags\\EndOperation.PNG")
         # gen MineOre
-        self.ObservceEyeImg = cv2.imread("Tags\\ObserveEye.PNG")
+        self.ObservceEyeImg = self.loadImage("Tags\\ObserveEye.PNG")
         ## jump to planetary
-        self.PlantaryTagImg = cv2.imread("Tags\\PlantaryTag.PNG")
-        self.PlanetaryClusterImg = cv2.imread("Tags\\PlanetaryCluster.PNG")
-        self.PlanetaryQuesImg = cv2.imread("Tags\\PlanetaryQues.PNG")
-        self.PlanetaryDsImg = cv2.imread("Tags\\PlanetaryDs.PNG")
-        self.TransitionImg = cv2.imread("Tags\\Transition.PNG")
-        self.OreTagImg = cv2.imread("Tags\\OreTag.PNG")
+        self.PlantaryTagImg = self.loadImage("Tags\\PlantaryTag.PNG")
+        self.PlanetaryClusterImg = self.loadImage("Tags\\PlanetaryCluster.PNG")
+        self.PlanetaryQuesImg = self.loadImage("Tags\\PlanetaryQues.PNG")
+        self.PlanetaryDsImg = self.loadImage("Tags\\PlanetaryDs.PNG")
+        self.TransitionImg = self.loadImage("Tags\\Transition.PNG")
+        self.OreTagImg = self.loadImage("Tags\\OreTag.PNG")
         self.OreTagPos = [1600, 230]
         ## Mining
         ### find and lock
         self.FirstOrePos = [1400, 120]
-        self.LockImg = cv2.imread("Tags\\Lock.PNG")
+        self.LockImg = self.loadImage("Tags\\Lock.PNG")
         ### coming close
-        self.SpeedUpImg = cv2.imread("Tags\\SpeedUp.PNG")
-        self.InWorkingImg = cv2.imread("Tags\\InWorking.PNG")
-        self.CollerterImg = cv2.imread("Tags\\Collecter.PNG")
-        self.CollectorNotWorkingTagImg = cv2.imread("Tags\\CollectorNotWorkingTag.PNG")
-        self.ComingCloseImg = cv2.imread("Tags\\ComingClose.png")
-        self.AroundImg = cv2.imread("Tags\\Around.png")
-        self.StopShipImg = cv2.imread("Tags\\StopShip.PNG")
+        self.SpeedUpImg = self.loadImage("Tags\\SpeedUp.PNG")
+        self.InWorkingImg = self.loadImage("Tags\\InWorking.PNG")
+        self.CollectorNotWorkingTagImg = self.loadImage("Tags\\CollectorNotWorkingTag.PNG")
+        self.ComingCloseImg = self.loadImage("Tags\\ComingClose.png")
+        self.AroundImg = self.loadImage("Tags\\Around.png")
+        self.StopShipImg = self.loadImage("Tags\\StopShip.PNG")
         self.LockOrePos = [1200, 80]
-        self.BagFullImg = cv2.imread("Tags\\BagFull.PNG")
+        self.BagFullImg = self.loadImage("Tags\\BagFull.PNG")
         # gen OreImg
         self.oreList = []
         self.oreImgPathList = os.listdir("Tags\\oreList\\")
         for oreImgPath in self.oreImgPathList:
-            self.oreList.append(cv2.imread("Tags\\oreList\\" + oreImgPath))
+            self.oreList.append(self.loadImage("Tags\\oreList\\" + oreImgPath))
         print("load {} ore".format(len(self.oreList)))
+
 
     def Run(self):
         if self.test == True:
             self.testRun()
             return
+        if not self.loadImageSuccess:
+            print("图片加载失败 , 程序退出")
+            return False
         while True:
             self.MineOre()
             self.BackStation()
@@ -82,7 +86,8 @@ class Miner:
         # self.Click(self.FirstOrePos)
         # self.ScrollDownOrePage()
         # self.ScrollUpOrePage()
-        self.FindOreAndLock()
+        print(cv2.imread("notExist.PNG"))
+        # self.FindOreAndLock()
         # print(self.isWorking())
         # if not self.isWorking():
         # self.clickTargetImg(self.CollectorNotWorkingTagImg)
@@ -264,3 +269,10 @@ class Miner:
         win32gui.PostMessage(self.hWnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
         win32gui.PostMessage(self.hWnd, win32con.WM_LBUTTONUP, 0, lParam)
         time.sleep(4)
+
+    def loadImage(self , filename):
+        imgLoadByCv2 = cv2.imread(filename)
+        if imgLoadByCv2 is None:
+            self.loadImageSuccess = False
+            print("load img error : {}".format(filename))
+        return imgLoadByCv2
