@@ -9,12 +9,13 @@ import BGK
 
 
 class Miner:
-    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7):
+    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3):
         self.hWnd = win32gui.FindWindow('Qt5QWindowIcon', windowName)
         self.loadPictureAndGenPosList()
         self.test = test
         self.WapenNum = WapenNum
         self.MaxScrollNumber = MaxScrollNumber
+        self.ActionSleepNumber = ActionSleepNumber
 
     def loadPictureAndGenPosList(self):
         self.loadImageSuccess = True
@@ -119,7 +120,8 @@ class Miner:
         self.MoveToMateriesBin()
         print("开始堆叠所有")
         self.StackAll()
-        self.clickTargetImg(self.EndOperationImg)
+        while not self.clickTargetImg(self.EndOperationImg):
+            time.sleep(1)
 
     def MoveToMateriesBin(self):
         self.clickTargetImg(self.BagImg)
@@ -173,9 +175,9 @@ class Miner:
             self.Click([x, y - 90])
 
     def Mining(self):
-        self.FindOreAndLock()
-        self.ComingClose()
-        self.StartMing()
+        if self.FindOreAndLock():
+            self.ComingClose()
+            self.StartMing()
 
     def FindOreAndLock(self):
         for index in range(len(self.oreList)):
@@ -268,7 +270,7 @@ class Miner:
         lParam = win32api.MAKELONG(x, y)
         win32gui.PostMessage(self.hWnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
         win32gui.PostMessage(self.hWnd, win32con.WM_LBUTTONUP, 0, lParam)
-        time.sleep(4)
+        time.sleep(self.ActionSleepNumber)
 
     def loadImage(self , filename):
         imgLoadByCv2 = cv2.imread(filename)
