@@ -9,13 +9,14 @@ import BGK
 
 
 class Miner:
-    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3):
+    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3 , JumpSleepTime = 20):
         self.hWnd = win32gui.FindWindow('Qt5QWindowIcon', windowName)
         self.loadPictureAndGenPosList()
         self.test = test
         self.WapenNum = WapenNum
         self.MaxScrollNumber = MaxScrollNumber
         self.ActionSleepNumber = ActionSleepNumber
+        self.JumpSleepTime = JumpSleepTime
 
     def loadPictureAndGenPosList(self):
         self.loadImageSuccess = True
@@ -137,7 +138,7 @@ class Miner:
     def MineOre(self):
         # self.clickTargetImg(self.LeaveStationImg)
         self.clickJump(1)
-        time.sleep(20)
+        time.sleep(self.JumpSleepTime)
         while self.checkImgExist(self.ObservceEyeImg) == False:
             print("等待离站")
             time.sleep(5)
