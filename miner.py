@@ -161,6 +161,7 @@ class Miner:
         print("寻找小行星集群带或者小行星带或者行星群")
         while not self.clickTargetImg(self.PlanetaryClusterImg) and not self.clickTargetImg(self.PlanetaryQuesImg) and not self.clickTargetImg(self.PlanetaryDsImg):
             time.sleep(1)
+        time.sleep(self.ActionSleepNumber * 2)
         print("开始跃迁")
         while not self.clickTargetImg(self.TransitionImg):
             time.sleep(1)
