@@ -9,9 +9,8 @@ import BGK
 
 
 class Miner:
-    def __init__(self, windowName, test=False , WapenNum = 3 , MaxScrollNumber = 7):
-        self.windowName = windowName
-        self.hWnd = win32gui.FindWindow('Qt5QWindowIcon', '逍遥模拟器')
+    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7):
+        self.hWnd = win32gui.FindWindow('Qt5QWindowIcon', windowName)
         self.loadPictureAndGenPosList()
         self.test = test
         self.WapenNum = WapenNum
@@ -46,15 +45,18 @@ class Miner:
         self.OreTagImg = cv2.imread("Tags\\OreTag.PNG")
         self.OreTagPos = [1600, 230]
         ## Mining
+        ### find and lock
         self.FirstOrePos = [1400, 120]
         self.LockImg = cv2.imread("Tags\\Lock.PNG")
+        ### coming close
+        self.SpeedUpImg = cv2.imread("Tags\\SpeedUp.PNG")
         self.InWorkingImg = cv2.imread("Tags\\InWorking.PNG")
         self.CollerterImg = cv2.imread("Tags\\Collecter.PNG")
         self.CollectorNotWorkingTagImg = cv2.imread("Tags\\CollectorNotWorkingTag.PNG")
         self.ComingCloseImg = cv2.imread("Tags\\ComingClose.png")
         self.AroundImg = cv2.imread("Tags\\Around.png")
         self.StopShipImg = cv2.imread("Tags\\StopShip.PNG")
-        self.LockOrePos = [1200 , 80]
+        self.LockOrePos = [1200, 80]
         self.BagFullImg = cv2.imread("Tags\\BagFull.PNG")
         # gen OreImg
         self.oreList = []
@@ -71,8 +73,6 @@ class Miner:
             self.MineOre()
             self.BackStation()
             self.PackBag()
-            
-            
 
     def testRun(self):
         # self.BackStation()
@@ -85,9 +85,9 @@ class Miner:
         self.FindOreAndLock()
         # print(self.isWorking())
         # if not self.isWorking():
-            # self.clickTargetImg(self.CollectorNotWorkingTagImg)
-            # self.clickTargetImg(self.CollectorNotWorkingTagImg)
-        #if not self.isWorking():
+        # self.clickTargetImg(self.CollectorNotWorkingTagImg)
+        # self.clickTargetImg(self.CollectorNotWorkingTagImg)
+        # if not self.isWorking():
         #    self.FindOreAndLock()
 
     def BackStation(self):
@@ -128,29 +128,30 @@ class Miner:
         self.clickTargetImg(self.StackAllImg)
 
     def MineOre(self):
-        self.clickTargetImg(self.LeaveStationImg)
+        # self.clickTargetImg(self.LeaveStationImg)
+        self.clickJump(1)
+        time.sleep(20)
         while self.checkImgExist(self.ObservceEyeImg) == False:
             print("等待离站")
             time.sleep(5)
         time.sleep(10)
         self.openObeserveTable()
-        workingCount = 0
+        workingCount = 0 # 通过最大工作轮数来防止机器进入一些异常，因为目前很少需要挖40轮还没挖满
         while not self.isBagFull() and workingCount < 40:
-            workingCount+=1
+            workingCount += 1
             if not self.checkImgExist(self.OreTagImg):
                 self.JumpToOrbPos()
-            if not self.isWorking():
+            if self.isWorking():
+                time.sleep(60)
+            else:
                 self.Mining()
-                continue
-            time.sleep(60)
-    
+
     def openObeserveTable(self):
         if not self.checkImgExist(self.PlantaryTagImg):
             self.clickTargetImg(self.ObservceEyeImg)
-        
 
     def JumpToOrbPos(self):
-        print("找到小行星集群带或者小行星带或者行星群")
+        print("寻找小行星集群带或者小行星带或者行星群")
         while not self.clickTargetImg(self.PlanetaryClusterImg) and not self.clickTargetImg(self.PlanetaryQuesImg) and not self.clickTargetImg(self.PlanetaryDsImg):
             time.sleep(1)
         print("开始跃迁")
@@ -163,8 +164,8 @@ class Miner:
         print("到达矿带，切换标签为为纯矿石")
         self.Click(self.OreTagPos)
         if self.checkImgExist(self.OreTagImg) == False:
-            x , y = self.OreTagPos
-            self.Click([x , y - 90])
+            x, y = self.OreTagPos
+            self.Click([x, y - 90])
 
     def Mining(self):
         self.FindOreAndLock()
@@ -174,21 +175,26 @@ class Miner:
     def FindOreAndLock(self):
         for index in range(len(self.oreList)):
             oreImg = self.oreList[index]
-            for i in range(self.MaxScrollNumber):
+            for scrollIndex in range(self.MaxScrollNumber):
                 self.Click(self.FirstOrePos) # show oreList
                 if self.clickTargetImg(oreImg):
                     print("minging ore " + str(index))
                     self.clickTargetImg(self.LockImg) # lock ore
+                    self.ScrollUpNOrePage(scrollIndex)
+                    self.scrollIndex = scrollIndex + 1 # for calculate waiting time
                     return True
                 self.ScrollDownOrePage()
-            self.ScrollAllOrePage()
+            self.ScrollUpAllOrePage()
         return False
 
     def ComingClose(self):
         self.Click(self.LockOrePos)
+        self.clickTargetImg(self.SpeedUpImg)
         self.clickTargetImg(self.ComingCloseImg)
-        time.sleep(70)
-        
+        time.sleep(35 + self.scrollIndex * 10)
+        self.clickTargetImg(self.SpeedUpImg)
+
+
     def StartMing(self):
         print("启动采集器")
         for i in range(self.WapenNum):
@@ -201,25 +207,27 @@ class Miner:
             self.ScrollDown2OreTag()
 
     def ScrollDown2OreTag(self):
-        x , y = self.FirstOrePos
-        BGK.scroll_down(self.hWnd , x , y , 9)
+        x, y = self.FirstOrePos
+        BGK.scroll_down(self.hWnd, x, y, 9)
         time.sleep(1)
 
-    def ScrollAllOrePage(self):
-        for i in range(self.MaxScrollNumber):
-            self.ScrollUpOrePage()
+    def ScrollUpAllOrePage(self):
+        self.ScrollUpNOrePage(self.MaxScrollNumber)
 
+    def ScrollUpNOrePage(self, pageNumber):
+        for i in range(pageNumber):
+            self.ScrollUpOrePage()
     def ScrollUpOrePage(self):
         for i in range(4):
             self.ScrollUp2OreTag()
 
     def ScrollUp2OreTag(self):
-        x , y = self.FirstOrePos
-        BGK.scroll_up(self.hWnd , x , y , 9)
+        x, y = self.FirstOrePos
+        BGK.scroll_up(self.hWnd, x, y, 9)
         time.sleep(1)
 
     def isWorking(self):
-        return self.checkImgExist(self.InWorkingImg) 
+        return self.checkImgExist(self.InWorkingImg)
 
     def isBagFull(self):
         return self.checkImgExist(self.BagFullImg)
