@@ -76,9 +76,9 @@ class Miner:
             print("图片加载失败 , 程序退出")
             return False
         while True:
-            self.MineOre()
             self.BackStation()
             self.PackBag()
+            self.MineOre()
 
     def testRun(self):
         # self.BackStation()
@@ -155,10 +155,13 @@ class Miner:
                 self.Mining()
 
     def openObeserveTable(self):
-        if not self.checkImgExist(self.PlantaryTagImg):
+        _ , x, _ = self.GetTargetPos(self.ObservceEyeImg)
+        if x > self.FirstOrePos[0]: ## 如果眼睛的横坐标 在 第一个矿石坐标的右边，
             self.clickTargetImg(self.ObservceEyeImg)
 
     def JumpToOrbPos(self):
+        print("切换标签为纯矿带")
+        self.ClickTagUntilImgFound(self.PlantaryTagImg)
         print("寻找小行星集群带或者小行星带或者行星群")
         while not self.clickTargetImg(self.PlanetaryClusterImg) and not self.clickTargetImg(self.PlanetaryQuesImg) and not self.clickTargetImg(self.PlanetaryDsImg):
             time.sleep(1)
@@ -171,8 +174,11 @@ class Miner:
             time.sleep(3)
         time.sleep(5)
         print("到达矿带，切换标签为为纯矿石")
+        self.ClickTagUntilImgFound(self.OreTagImg)
+
+    def ClickTagUntilImgFound(self , targetImg):
         self.Click(self.OreTagPos)
-        if self.checkImgExist(self.OreTagImg) == False:
+        if self.checkImgExist(targetImg) == False:
             x, y = self.OreTagPos
             self.Click([x, y - 90])
 
