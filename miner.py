@@ -7,15 +7,16 @@ JumpOrePosException = Exception("跳跃矿带超时，出现异常")
 ObserverSettingException = Exception("没有找到筛选条目 - 矿带或者矿石 ， 请看筛选条件是否设置完毕")
 OpenBagException = Exception("点击背包找不到全选按钮，推荐重新更换背包图标")
 DestroyedException = Exception("发现太空舱，可能被击毁了，开始换船")
-NotFoundOreShipException = Exception("没有找到可以换的冲锋2 , 退出")
+NotFoundOreShipException = Exception("没有找到可以换的冲锋级挖矿船 , 退出")
 EndOpeartionImgNotFoundException = Exception("退出按钮没有找到")
 CollectorNotFoundException = Exception("没有找到采矿激光器图标(无论工作与否) , 可能需要更换对应的图标")
-NotFuoundJumpTagInStartUpException = Exception("程序启动没有找到跃迁列表按钮")
+NotFoundJumpTagInStartUpException = Exception("程序启动没有找到跃迁列表按钮")
 BackStationWaitingException = Exception("回站等待时间过长")
 
 
 class Miner:
-    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3, JumpSleepTime=20):
+    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3, JumpSleepTime=20,
+                 ShipType="冲2"):
         self.WindowActor = BGK.WindowActor(windowName=windowName, ActionSleepNumber=ActionSleepNumber)
         self.loadPictureAndGenPosList()
         self.test = test
@@ -23,12 +24,14 @@ class Miner:
         self.MaxScrollNumber = MaxScrollNumber
         self.ActionSleepNumber = ActionSleepNumber
         self.JumpSleepTime = JumpSleepTime
+        self.ShipType = ShipType
 
     def loadPictureAndGenPosList(self):
         self.loadImageSuccess = True
         # change ship
         self.ShipHangarImg = self.loadImage("Tags\\ShipHangar.PNG")
-        self.OreShip2Img = self.loadImage("Tags\\OreShip2.PNG")
+        self.OreShip2Img = self.loadImage("Tags\\ShipType\\c2\\OreShip2.PNG")
+        self.OreShip3Img = self.loadImage("Tags\\ShipType\\c3\\OreShip3.PNG")
         self.ActiveShipImg = self.loadImage("Tags\\ActiveShip.PNG")
 
         # gen Jump
@@ -38,7 +41,7 @@ class Miner:
         self.LeaveStationImg = self.loadImage("Tags\\LeaveStation.PNG")
         self.JumpPoses = []
         for i in range(2):
-            self.JumpPoses.append([350, 437 + 120 * i])
+            self.JumpPoses.append([335, 437 + 120 * i])
         # gen packBag
         ## change ShipHangar to MaterialHangar
         self.RawMaterialsHangarImg = self.loadImage("Tags\\RawMaterialsHangar.PNG")
@@ -71,9 +74,6 @@ class Miner:
         self.FirstOrePos = [1400, 120]
         self.LockImg = self.loadImage("Tags\\Lock.PNG")
         ### coming close
-        self.SpeedUpImg = self.loadImage("Tags\\SpeedUp.PNG")
-        self.InWorkingImg = self.loadImage("Tags\\InWorking.PNG")
-        self.CollectorNotWorkingTagImg = self.loadImage("Tags\\CollectorNotWorkingTag.PNG")
         self.ComingCloseImg = self.loadImage("Tags\\ComingClose.png")
         self.StopShipImg = self.loadImage("Tags\\StopShip.PNG")
         self.LockOrePos = [1200, 80]
@@ -84,6 +84,12 @@ class Miner:
         for oreImgPath in self.oreImgPathList:
             self.oreList.append(self.loadImage("Tags\\oreList\\" + oreImgPath))
         print("load {} ore".format(len(self.oreList)))
+
+    def loadByShipType(self):
+        self.SpeedUpImg = self.loadImage("Tags\\ShipType\\{}\\SpeedUp.PNG".format(self.ShipType))
+        self.InWorkingImg = self.loadImage("Tags\\ShipType\\{}\\InWorking.PNG".format(self.ShipType))
+        self.CollectorNotWorkingTagImg = self.loadImage(
+            "Tags\\ShipType\\{}\\CollectorNotWorkingTag.PNG".format(self.ShipType))
 
     def Run(self):
         if self.test:
@@ -104,25 +110,6 @@ class Miner:
                 else:
                     time.sleep(10)
 
-    def changeShip(self):
-        self.WindowActor.clickTargetImg(self.ShipHangarImg)
-        if not self.WindowActor.checkImgExist(self.OreShip2Img):
-            raise NotFoundOreShipException
-
-        self.WindowActor.clickTargetImg(self.OreShip2Img)
-        self.WindowActor.clickTargetImg(self.ActiveShipImg)
-        time.sleep(6)  # 等待切换舰船激活成功
-
-        self.clickEndOpeartion()
-
-    def clickEndOpeartion(self):
-        count = 0
-        while not self.WindowActor.clickTargetImg(self.EndOperationImg):
-            time.sleep(1)
-            count += 1
-            if count == 8:
-                raise EndOpeartionImgNotFoundException
-
     def testRun(self):
         # self.BackStation()
         # self.PackBag()
@@ -140,10 +127,40 @@ class Miner:
         #    self.FindOreAndLock()
         pass
 
+    def changeShip(self):
+        self.WindowActor.clickTargetImg(self.ShipHangarImg)
+
+        if not self.WindowActor.checkImgExist(self.OreShip2Img) and not self.WindowActor.checkImgExist(
+                self.OreShip3Img):
+            raise NotFoundOreShipException
+
+        if self.WindowActor.checkImgExist(self.OreShip3Img):
+            self.WindowActor.clickTargetImg(self.OreShip3Img)
+            self.ShipType = "c3"
+            self.WapenNum = 3
+        else:
+            self.WindowActor.clickTargetImg(self.OreShip2Img)
+            self.ShipType = "c2"
+            self.WapenNum = 3
+
+        self.WindowActor.clickTargetImg(self.ActiveShipImg)
+        print("换船 : {} ".format(self.ShipType))
+        self.loadByShipType()
+        time.sleep(6)  # 等待切换舰船激活成功
+
+        self.clickEndOpeartion()
+
+    def clickEndOpeartion(self):
+        count = 0
+        while not self.WindowActor.clickTargetImg(self.EndOperationImg):
+            time.sleep(1)
+            count += 1
+            if count == 8:
+                raise EndOpeartionImgNotFoundException
+
     def BackStation(self):
         print("开始回站")
         self.clickJump(0)
-
         count = 0
         while not self.checkInStation():
             print("回站 等待")
@@ -159,13 +176,18 @@ class Miner:
         if self.JumpTagPos is [0, 0]:
             found, x, y = self.WindowActor.GetTargetPos(self.JumpTagImg)
             if not found:
-                raise NotFuoundJumpTagInStartUpException
+                raise NotFoundJumpTagInStartUpException
             self.JumpTagPos = [x, y]
         if not self.WindowActor.checkImgExist(self.JumpTagImg):  # 可能是扫描提示挡住了跃迁列表按钮
             self.WindowActor.Click(self.JumpTagPos)
             time.sleep(self.ActionSleepNumber)  # 多等一个 ActionSleep 等待扫描提示消失
+
+        count = 0
         while not self.WindowActor.clickTargetImg(self.JumpTagImg):
             time.sleep(1)
+            count += 1
+            if count == 15:
+                raise NotFoundJumpTagInStartUpException
         self.WindowActor.Click(self.JumpPoses[jumpIndex])
         self.WindowActor.clickTargetImg(self.ConfirmTagImg)
 
@@ -183,7 +205,7 @@ class Miner:
         if not self.WindowActor.checkImgExist(self.AllSelectImg):
             raise OpenBagException
 
-        self.changeHangarToMaterialHangar() ## 防止检查到舰船舱库里有，但是没有激活的太空舱
+        self.changeHangarToMaterialHangar()  ## 防止检查到舰船舱库里有，但是没有激活的太空舱
         if self.WindowActor.checkImgExist(self.SpaceBinImg):
             raise DestroyedException
         self.WindowActor.clickTargetImg(self.OreBinImg)
@@ -201,7 +223,7 @@ class Miner:
         self.WindowActor.clickTargetImg(self.StackAllImg)
 
     def MineOre(self):
-        # self.WindowActor.clickTargetImg(self.LeaveStationImg)
+        print("开始挖矿")
         self.clickJump(1)
         time.sleep(self.JumpSleepTime)
 
@@ -235,11 +257,12 @@ class Miner:
                 self.PlanetaryQuesImg) and not self.WindowActor.clickTargetImg(self.PlanetaryDsImg):
             time.sleep(1)
             sleepCount += 1
-            if sleepCount == 40:
+            if sleepCount == 30:
                 raise JumpOrePosException
         time.sleep(self.ActionSleepNumber * 2)
         print("开始跃迁")
-        while not self.WindowActor.clickTargetImg(self.TransitionImg):
+        while not self.WindowActor.clickTargetImg(self.TransitionImg) and not self.WindowActor.clickTargetImg(
+                self.ComingCloseImg):
             time.sleep(1)
         self.selectOreObserve()
         while not self.WindowActor.checkImgExist(self.OreTagImg):
@@ -248,7 +271,6 @@ class Miner:
         self.WindowActor.Click(self.OreTagPos)
         time.sleep(5)
 
-        self.selectOreObserve()
         return True
 
     def selectPlantaryObserve(self):
@@ -273,6 +295,8 @@ class Miner:
         if self.FindOreAndLock():
             self.ComingClose()
             self.StartMing()
+        else:
+            print("没有找到要锁定的矿石")
 
     def FindOreAndLock(self):
         for index in range(len(self.oreList)):
