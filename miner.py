@@ -16,15 +16,14 @@ BackStationWaitingException = Exception("回站等待时间过长")
 
 
 class Miner:
-    def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3, JumpSleepTime=20,
-                 ShipType="c2"):
+    def __init__(self, windowName, test=False, MaxScrollNumber=7, MaxRetryCount=10, ActionSleepNumber=3, JumpSleepTime=20, ShipType="c2"):
         self.WindowActor = BGK.WindowActor(windowName=windowName, ActionSleepNumber=ActionSleepNumber)
         self.test = test
-        self.WapenNum = WapenNum
         self.MaxScrollNumber = MaxScrollNumber
         self.ActionSleepNumber = ActionSleepNumber
         self.JumpSleepTime = JumpSleepTime
         self.ShipType = ShipType
+        self.MaxRetryCOunt = MaxRetryCount
         self.loadPictureAndGenPosList()
 
     def loadPictureAndGenPosList(self):
@@ -88,10 +87,14 @@ class Miner:
         print("load {} ore".format(len(self.oreList)))
 
     def loadByShipType(self):
+        print("换船 : {} ".format(self.ShipType))
+        if self.ShipType is "c3":
+            self.WapenNum = 3
+        else:
+            self.WapenNum = 2
         self.SpeedUpImg = self.loadImage("Tags\\ShipType\\{}\\SpeedUp.PNG".format(self.ShipType))
         self.InWorkingImg = self.loadImage("Tags\\ShipType\\{}\\InWorking.PNG".format(self.ShipType))
-        self.CollectorNotWorkingTagImg = self.loadImage(
-            "Tags\\ShipType\\{}\\CollectorNotWorkingTag.PNG".format(self.ShipType))
+        self.CollectorNotWorkingTagImg = self.loadImage("Tags\\ShipType\\{}\\CollectorNotWorkingTag.PNG".format(self.ShipType))
 
     def Run(self):
         if self.test:
@@ -132,21 +135,18 @@ class Miner:
     def changeShip(self):
         self.WindowActor.clickTargetImg(self.ShipHangarImg)
 
-        if not self.WindowActor.checkImgExist(self.OreShip2Img) and not self.WindowActor.checkImgExist(
-                self.OreShip3Img):
+        if not self.WindowActor.checkImgExist(self.OreShip2Img) and not self.WindowActor.checkImgExist(self.OreShip3Img):
             raise NotFoundOreShipException
 
         if self.WindowActor.checkImgExist(self.OreShip2Img):
             self.WindowActor.clickTargetImg(self.OreShip2Img)
             self.ShipType = "c2"
-            self.WapenNum = 2
         else:
             self.WindowActor.clickTargetImg(self.OreShip3Img)
             self.ShipType = "c3"
-            self.WapenNum = 3
 
         self.WindowActor.clickTargetImg(self.ActiveShipImg)
-        print("换船 : {} ".format(self.ShipType))
+
         self.loadByShipType()
         time.sleep(6)  # 等待切换舰船激活成功
 
@@ -260,7 +260,7 @@ class Miner:
         print("寻找小行星集群带或者小行星带或者行星群")
         sleepCount = 0
         while not self.WindowActor.clickTargetImg(self.PlanetaryClusterImg) and not self.WindowActor.clickTargetImg(
-                self.PlanetaryQuesImg) and not self.WindowActor.clickTargetImg(self.PlanetaryDsImg):
+                self.PlanetaryDsImg) and not self.WindowActor.clickTargetImg(self.PlanetaryQuesImg):
             time.sleep(1)
             sleepCount += 1
             if sleepCount == 30:
@@ -360,6 +360,15 @@ class Miner:
 
     def isBagFull(self):
         return self.WindowActor.checkImgExist(self.BagFullImg)
+
+    def RetryFunc(self, func, tips, funcException):
+        count = 0
+        while not func():
+            print(tips)
+            time.sleep(3)
+            count += 1
+            if count == self.MaxRetryCOunt:
+                raise funcException
 
     def loadImage(self, filename):
         imgLoadByCv2 = cv2.imread(filename)
