@@ -87,8 +87,9 @@ class Miner:
         print("load {} ore".format(len(self.oreList)))
 
     def loadByShipType(self):
-        print("换船 : {} ".format(self.ShipType))
-        if self.ShipType is "c3":
+        shipName = "冲2" if self.ShipType == "c2" else "冲3"
+        print("当前船只 : {} ".format(shipName))
+        if self.ShipType == "c3":
             self.WapenNum = 3
         else:
             self.WapenNum = 2
@@ -109,11 +110,15 @@ class Miner:
                 self.MineOre()
             except Exception as e:
                 print("get exception : {}".format(e))
+
                 if e == DestroyedException:
                     self.changeShip()
                     time.sleep(1800)
-                else:
-                    time.sleep(10)
+                elif e == EndOpeartionImgNotFoundException:
+                    while not self.WindowActor.checkImgExist(self.LeaveStationImg):
+                        print("点击结束按钮失败，重复等待点击来回到起始界面")
+                        self.WindowActor.clickTargetImg(self.EndOperationImg)
+                time.sleep(10)
 
     def testRun(self):
         # self.BackStation()
@@ -153,23 +158,21 @@ class Miner:
         self.clickEndOpeartion()
 
     def clickEndOpeartion(self):
-        count = 0
-        while not self.WindowActor.clickTargetImg(self.EndOperationImg):
-            time.sleep(1)
-            count += 1
-            if count == 8:
-                raise EndOpeartionImgNotFoundException
+        self.RetryFunc(func=lambda: self.WindowActor.clickTargetImg(self.EndOperationImg), tips="等待整理背包点击结束标记",
+                       funcException=EndOpeartionImgNotFoundException)
 
     def BackStation(self):
         print("开始回站")
         self.clickJump(0)
-        count = 0
-        while not self.checkInStation():
-            print("回站 等待")
-            time.sleep(2)
-            count += 1
-            if count == 20:
-                raise BackStationWaitingException
+
+        self.RetryFunc(func=self.checkInStation, tips="回站 等待", funcException=BackStationWaitingException , RetryRate=2)
+        # count = 0
+        # while not self.checkInStation():
+        #     print("回站 等待")
+        #     time.sleep(2)
+        #     count += 1
+        #     if count == 20:
+        #         raise BackStationWaitingException
         print("已经回到空间站")
         time.sleep(5)
         self.PackBag()
@@ -184,12 +187,8 @@ class Miner:
             self.WindowActor.Click(self.JumpTagPos)
             time.sleep(self.ActionSleepNumber)  # 多等一个 ActionSleep 等待扫描提示消失
 
-        count = 0
-        while not self.WindowActor.clickTargetImg(self.JumpTagImg):
-            time.sleep(1)
-            count += 1
-            if count == 15:
-                raise NotFoundJumpTagInStartUpException
+        self.RetryFunc(func=lambda: self.WindowActor.clickTargetImg(self.JumpTagImg), tips="找寻JumpTag",
+                       funcException=NotFoundJumpTagInStartUpException)
         self.WindowActor.Click(self.JumpPoses[jumpIndex])
         self.WindowActor.clickTargetImg(self.ConfirmTagImg)
 
@@ -242,13 +241,8 @@ class Miner:
                 self.Mining()
 
     def openObeserveTable(self):
-        count = 1
-        while not self.WindowActor.checkImgExist(self.ObservceEyeImg):
-            print("等待离站")
-            time.sleep(3)
-            count += 1
-            if count == 10:
-                raise LeaveStationException
+        self.RetryFunc(func=lambda: self.WindowActor.checkImgExist(self.ObservceEyeImg), tips="等待离站",
+                       funcException=LeaveStationException)
         time.sleep(10)
         _, x, _ = self.WindowActor.GetTargetPos(self.ObservceEyeImg)
         if x > self.FirstOrePos[0]:  ## 如果眼睛的横坐标 在 第一个矿石坐标的右边，
@@ -259,16 +253,16 @@ class Miner:
         self.selectPlantaryObserve()
         print("寻找小行星集群带或者小行星带或者行星群")
         sleepCount = 0
-        while not self.WindowActor.clickTargetImg(self.PlanetaryClusterImg) and not self.WindowActor.clickTargetImg(
-                self.PlanetaryDsImg) and not self.WindowActor.clickTargetImg(self.PlanetaryQuesImg):
-            time.sleep(1)
-            sleepCount += 1
-            if sleepCount == 30:
-                raise JumpOrePosException
+
+        clickPlantary = lambda: self.WindowActor.clickTargetImg(self.PlanetaryClusterImg) or self.WindowActor.clickTargetImg(
+            self.PlanetaryDsImg) or self.WindowActor.clickTargetImg(self.PlanetaryQuesImg)
+
+        self.RetryFunc(func=clickPlantary, tips="正在寻找小行星集群带或者小行星带或者行星群",
+                       funcException=JumpOrePosException)
+
         time.sleep(self.ActionSleepNumber * 2)
         print("开始跃迁")
-        while not self.WindowActor.clickTargetImg(self.TransitionImg) and not self.WindowActor.clickTargetImg(
-                self.ComingCloseImg):
+        while not self.WindowActor.clickTargetImg(self.TransitionImg) and not self.WindowActor.clickTargetImg(self.ComingCloseImg):
             time.sleep(1)
         self.selectOreObserve()
         count = 1
@@ -361,13 +355,13 @@ class Miner:
     def isBagFull(self):
         return self.WindowActor.checkImgExist(self.BagFullImg)
 
-    def RetryFunc(self, func, tips, funcException):
+    def RetryFunc(self, func, tips, funcException , RetryRate = 1):
         count = 0
         while not func():
             print(tips)
             time.sleep(3)
             count += 1
-            if count == self.MaxRetryCOunt:
+            if count == self.MaxRetryCOunt * RetryRate:
                 raise funcException
 
     def loadImage(self, filename):
