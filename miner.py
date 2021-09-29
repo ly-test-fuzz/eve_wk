@@ -3,6 +3,7 @@ import time
 import cv2
 import BGK
 
+LeaveStationException = Exception("离站超时")
 JumpOrePosException = Exception("跳跃矿带超时，出现异常")
 ObserverSettingException = Exception("没有找到筛选条目 - 矿带或者矿石 ， 请看筛选条件是否设置完毕")
 OpenBagException = Exception("点击背包找不到全选按钮，推荐重新更换背包图标")
@@ -16,15 +17,15 @@ BackStationWaitingException = Exception("回站等待时间过长")
 
 class Miner:
     def __init__(self, windowName, test=False, WapenNum=3, MaxScrollNumber=7, ActionSleepNumber=3, JumpSleepTime=20,
-                 ShipType="冲2"):
+                 ShipType="c2"):
         self.WindowActor = BGK.WindowActor(windowName=windowName, ActionSleepNumber=ActionSleepNumber)
-        self.loadPictureAndGenPosList()
         self.test = test
         self.WapenNum = WapenNum
         self.MaxScrollNumber = MaxScrollNumber
         self.ActionSleepNumber = ActionSleepNumber
         self.JumpSleepTime = JumpSleepTime
         self.ShipType = ShipType
+        self.loadPictureAndGenPosList()
 
     def loadPictureAndGenPosList(self):
         self.loadImageSuccess = True
@@ -73,6 +74,7 @@ class Miner:
         ### find and lock
         self.FirstOrePos = [1400, 120]
         self.LockImg = self.loadImage("Tags\\Lock.PNG")
+        self.loadByShipType()
         ### coming close
         self.ComingCloseImg = self.loadImage("Tags\\ComingClose.png")
         self.StopShipImg = self.loadImage("Tags\\StopShip.PNG")
@@ -134,13 +136,13 @@ class Miner:
                 self.OreShip3Img):
             raise NotFoundOreShipException
 
-        if self.WindowActor.checkImgExist(self.OreShip3Img):
-            self.WindowActor.clickTargetImg(self.OreShip3Img)
-            self.ShipType = "c3"
-            self.WapenNum = 3
-        else:
+        if self.WindowActor.checkImgExist(self.OreShip2Img):
             self.WindowActor.clickTargetImg(self.OreShip2Img)
             self.ShipType = "c2"
+            self.WapenNum = 2
+        else:
+            self.WindowActor.clickTargetImg(self.OreShip3Img)
+            self.ShipType = "c3"
             self.WapenNum = 3
 
         self.WindowActor.clickTargetImg(self.ActiveShipImg)
@@ -240,9 +242,13 @@ class Miner:
                 self.Mining()
 
     def openObeserveTable(self):
+        count = 1
         while not self.WindowActor.checkImgExist(self.ObservceEyeImg):
             print("等待离站")
-            time.sleep(5)
+            time.sleep(3)
+            count += 1
+            if count == 10:
+                raise LeaveStationException
         time.sleep(10)
         _, x, _ = self.WindowActor.GetTargetPos(self.ObservceEyeImg)
         if x > self.FirstOrePos[0]:  ## 如果眼睛的横坐标 在 第一个矿石坐标的右边，
@@ -265,12 +271,16 @@ class Miner:
                 self.ComingCloseImg):
             time.sleep(1)
         self.selectOreObserve()
+        count = 1
         while not self.WindowActor.checkImgExist(self.OreTagImg):
             print("等待跃迁到矿带")
             time.sleep(3)
+            count += 1
+            if count == 7:
+                print("等待矿石图标超时，可能这个矿带没有矿石")
+                return False
         self.WindowActor.Click(self.OreTagPos)
         time.sleep(5)
-
         return True
 
     def selectPlantaryObserve(self):
