@@ -110,7 +110,6 @@ class Miner:
                 self.MineOre()
             except Exception as e:
                 print("get exception : {}".format(e))
-
                 if e == DestroyedException:
                     self.changeShip()
                     time.sleep(1800)
@@ -143,12 +142,13 @@ class Miner:
         if not self.WindowActor.checkImgExist(self.OreShip2Img) and not self.WindowActor.checkImgExist(self.OreShip3Img):
             raise NotFoundOreShipException
 
-        if self.WindowActor.checkImgExist(self.OreShip2Img):
-            self.WindowActor.clickTargetImg(self.OreShip2Img)
-            self.ShipType = "c2"
-        else:
+        if self.WindowActor.checkImgExist(self.OreShip3Img):
             self.WindowActor.clickTargetImg(self.OreShip3Img)
             self.ShipType = "c3"
+        else:
+            self.WindowActor.clickTargetImg(self.OreShip2Img)
+            self.ShipType = "c2"
+
 
         self.WindowActor.clickTargetImg(self.ActiveShipImg)
 
@@ -166,13 +166,6 @@ class Miner:
         self.clickJump(0)
 
         self.RetryFunc(func=self.checkInStation, tips="回站 等待", funcException=BackStationWaitingException , RetryRate=2)
-        # count = 0
-        # while not self.checkInStation():
-        #     print("回站 等待")
-        #     time.sleep(2)
-        #     count += 1
-        #     if count == 20:
-        #         raise BackStationWaitingException
         print("已经回到空间站")
         time.sleep(5)
         self.PackBag()
@@ -345,9 +338,8 @@ class Miner:
             self.WindowActor.ScrollUpOrePage(x, y)
 
     def HasCollector(self):
-        self.WindowActor.clickTargetImg(1000 , 10) # 为了让总览菜单缩回去
-        if not self.WindowActor.checkImgExist(self.InWorkingImg) and not self.WindowActor.checkImgExist(
-                self.CollectorNotWorkingTagImg):
+        self.WindowActor.Click([1000 , 10]) # 为了让总览菜单缩回去
+        if not self.WindowActor.checkImgExist(self.InWorkingImg) and not self.WindowActor.checkImgExist(self.CollectorNotWorkingTagImg):
             raise CollectorNotFoundException
         return True
 

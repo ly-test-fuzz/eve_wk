@@ -3,6 +3,7 @@ import miner
 if __name__ == '__main__':
     minerObj = miner.Miner(
         windowName="逍遥模拟器",  # 窗口名字，
+        MaxRetryCount= 10, # 重试次数
         MaxScrollNumber=5,  # 最大滚屏翻页页数
         ActionSleepNumber=3,  # 每一个点击操作的睡眠时间
         JumpSleepTime=20,  # 跃迁到矿区的时间
