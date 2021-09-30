@@ -222,6 +222,7 @@ class Miner:
         print("开始堆叠所有")
         self.WindowActor.clickTargetImg(self.AllSelectImg)
         self.WindowActor.clickTargetImg(self.StackAllImg)
+        time.sleep(5) # 等待堆叠所有加载完毕
 
     def MineOre(self):
         print("开始挖矿")
@@ -344,6 +345,7 @@ class Miner:
             self.WindowActor.ScrollUpOrePage(x, y)
 
     def HasCollector(self):
+        self.WindowActor.clickTargetImg(1000 , 10) # 为了让总览菜单缩回去
         if not self.WindowActor.checkImgExist(self.InWorkingImg) and not self.WindowActor.checkImgExist(
                 self.CollectorNotWorkingTagImg):
             raise CollectorNotFoundException
