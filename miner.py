@@ -53,6 +53,7 @@ class Miner:
         self.MaterialsHangarImg = self.loadImage("Tags\\MaterialsHangar.PNG")
         self.MoveToImg = self.loadImage("Tags\\MoveTo.PNG")
         ## Stack All
+        self.BagEmptyImg = self.loadImage("Tags\\BagEmpty.PNG")
         self.StackAllImg = self.loadImage("Tags\\StackAll.PNG")
         self.EndOperationImg = self.loadImage("Tags\\EndOperation.PNG")
         # gen MineOre
@@ -169,6 +170,8 @@ class Miner:
         print("已经回到空间站")
         time.sleep(5)
         self.PackBag()
+        while not self.WindowActor.checkImgExist(self.BagEmptyImg):
+            self.PackBag()
 
     def clickJump(self, jumpIndex):
         if self.JumpTagPos is [0, 0]:
@@ -206,6 +209,7 @@ class Miner:
         self.WindowActor.clickTargetImg(self.AllSelectImg)
         self.WindowActor.clickTargetImg(self.MoveToImg)
         self.WindowActor.clickTargetImg(self.MaterialsHangarImg)
+        return True
 
     def changeHangarToMaterialHangar(self):
         print("进入切换仓库到物品仓库")
@@ -224,15 +228,17 @@ class Miner:
 
         self.openObeserveTable()
         workingCount = 0  # 通过最大工作轮数来防止机器进入一些异常，因为目前很少需要挖40轮还没挖满
-        while not self.isBagFull() and workingCount < 30:
+        while not self.isBagFull() and workingCount < 35:
             self.HasCollector()
             workingCount += 1
             if self.isWorking():
                 time.sleep(60)
             else:
-                if not self.WindowActor.checkImgExist(self.OreTagImg):
+                if not self.WindowActor.checkImgExist(self.OreTagImg) or not self.FindOreAndLock():
                     self.JumpToOrbPos()
-                self.Mining()
+                else:
+                    self.ComingClose()
+                    self.StartMing()
 
     def openObeserveTable(self):
         self.RetryFunc(func=lambda: self.WindowActor.checkImgExist(self.ObservceEyeImg), tips="等待离站",
@@ -289,12 +295,6 @@ class Miner:
             self.WindowActor.clickTargetImg(self.PlantaryObserveTagImg)  # 点击筛选条目
             self.WindowActor.Click(self.OreObserverTagPos)  # 点击 矿带筛选条目
 
-    def Mining(self):
-        if self.FindOreAndLock():
-            self.ComingClose()
-            self.StartMing()
-        else:
-            print("没有找到要锁定的矿石")
 
     def FindOreAndLock(self):
         for index in range(len(self.oreList)):

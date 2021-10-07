@@ -11,3 +11,4 @@ if __name__ == '__main__':
         # test=True,  # 是否是测试模块
     )
     minerObj.Run()
+q
