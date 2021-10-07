@@ -46,6 +46,7 @@ class Miner:
         ## change ShipHangar to MaterialHangar
         self.RawMaterialsHangarImg = self.loadImage("Tags\\RawMaterialsHangar.PNG")
         ## move to MaterialsHangar
+        self.SpaceHangarImg = self.loadImage("Tags\\SpaceHangar.PNG")
         self.BagImg = self.loadImage("Tags\\Bag.PNG")
         self.OreBinImg = self.loadImage("Tags\\oreBin.PNG")
         self.SpaceBinImg = self.loadImage("Tags\\SpaceBin.PNG")
@@ -125,9 +126,8 @@ class Miner:
         # self.PackBag()
         # self.MineOre()
         # self.Mining()
-        print(time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime()))
-        self.changeHangarToMaterialHangar()
-        print(time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime()))
+        # self.CloseMaterialsHangar()
+        self.PackBag()
         # self.FindOreAndLock()
         # print(self.isWorking())
         # if not self.isWorking():
@@ -138,6 +138,7 @@ class Miner:
         pass
 
     def changeShip(self):
+        self.OpenMaterialsHangar()
         self.WindowActor.clickTargetImg(self.ShipHangarImg)
 
         if not self.WindowActor.checkImgExist(self.OreShip2Img) and not self.WindowActor.checkImgExist(self.OreShip3Img):
@@ -149,7 +150,6 @@ class Miner:
         else:
             self.WindowActor.clickTargetImg(self.OreShip2Img)
             self.ShipType = "c2"
-
 
         self.WindowActor.clickTargetImg(self.ActiveShipImg)
 
@@ -166,7 +166,7 @@ class Miner:
         print("开始回站")
         self.clickJump(0)
 
-        self.RetryFunc(func=self.checkInStation, tips="回站 等待", funcException=BackStationWaitingException , RetryRate=2)
+        self.RetryFunc(func=self.checkInStation, tips="回站 等待", funcException=BackStationWaitingException, RetryRate=2)
         print("已经回到空间站")
         time.sleep(5)
         self.PackBag()
@@ -202,9 +202,12 @@ class Miner:
         if not self.WindowActor.checkImgExist(self.AllSelectImg):
             raise OpenBagException
 
+        self.OpenMaterialsHangar()
         self.changeHangarToMaterialHangar()  ## 防止检查到舰船舱库里有，但是没有激活的太空舱
+        self.CloseMaterialsHangar()
         if self.WindowActor.checkImgExist(self.SpaceBinImg):
             raise DestroyedException
+
         self.WindowActor.clickTargetImg(self.OreBinImg)
         self.WindowActor.clickTargetImg(self.AllSelectImg)
         self.WindowActor.clickTargetImg(self.MoveToImg)
@@ -219,7 +222,7 @@ class Miner:
         print("开始堆叠所有")
         self.WindowActor.clickTargetImg(self.AllSelectImg)
         self.WindowActor.clickTargetImg(self.StackAllImg)
-        time.sleep(5) # 等待堆叠所有加载完毕
+        time.sleep(5)  # 等待堆叠所有加载完毕
 
     def MineOre(self):
         print("开始挖矿")
@@ -295,7 +298,6 @@ class Miner:
             self.WindowActor.clickTargetImg(self.PlantaryObserveTagImg)  # 点击筛选条目
             self.WindowActor.Click(self.OreObserverTagPos)  # 点击 矿带筛选条目
 
-
     def FindOreAndLock(self):
         for index in range(len(self.oreList)):
             oreImg = self.oreList[index]
@@ -338,7 +340,7 @@ class Miner:
             self.WindowActor.ScrollUpOrePage(x, y)
 
     def HasCollector(self):
-        self.WindowActor.Click([1000 , 10]) # 为了让总览菜单缩回去
+        self.WindowActor.Click([1000, 10])  # 为了让总览菜单缩回去
         if not self.WindowActor.checkImgExist(self.InWorkingImg) and not self.WindowActor.checkImgExist(self.CollectorNotWorkingTagImg):
             raise CollectorNotFoundException
         return True
@@ -349,7 +351,7 @@ class Miner:
     def isBagFull(self):
         return self.WindowActor.checkImgExist(self.BagFullImg)
 
-    def RetryFunc(self, func, tips, funcException , RetryRate = 1):
+    def RetryFunc(self, func, tips, funcException, RetryRate=1):
         count = 0
         while not func():
             print(tips)
@@ -364,3 +366,14 @@ class Miner:
             self.loadImageSuccess = False
             print("load img error : {}".format(filename))
         return imgLoadByCv2
+
+    def OpenMaterialsHangar(self):
+        print("打开空间站舱")
+        if not self.WindowActor.checkImgExist(self.RawMaterialsHangarImg):
+            self.WindowActor.clickTargetImg(self.SpaceHangarImg)
+        time.sleep(3)
+
+    def CloseMaterialsHangar(self):
+        print("关闭空间站舱")
+        if self.WindowActor.checkImgExist(self.RawMaterialsHangarImg):
+            self.WindowActor.clickTargetImg(self.SpaceHangarImg)
